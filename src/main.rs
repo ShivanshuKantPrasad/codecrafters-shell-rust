@@ -3,7 +3,7 @@ use std::io::{self, Write};
 // use std::os::unix::fs::PermissionsExt;
 use std::{path::PathBuf, process::Command};
 
-static COMMANDS: &[&str] = &["type", "echo", "exit"];
+static COMMANDS: &[&str] = &["type", "echo", "exit", "pwd", "cd"];
 
 fn find_executable_in_dir(executable: &str, dir: PathBuf) -> Option<PathBuf> {
     for dir_item in std::fs::read_dir(dir).unwrap() {
@@ -52,6 +52,9 @@ fn parse_commands(input: String) {
         Some("echo") => {
             println!("{}", split.collect::<Vec<_>>().join(" "));
         }
+        Some("pwd") => {
+            println!("{}", std::env::current_dir().unwrap().display());
+        }
         Some("type") => {
             if let Some(command) = split.next() {
                 if COMMANDS.contains(&command) {
@@ -66,12 +69,10 @@ fn parse_commands(input: String) {
         }
         Some(x) => match find_executable_in_path(x) {
             Some(path) => {
-                let result = Command::new(path.as_os_str())
+                Command::new(path.as_os_str())
                     .args(split)
-                    .output()
-                    .expect("failed to execute process")
-                    .stdout;
-                println!("{}", String::from_utf8(result).unwrap().trim());
+                    .status()
+                    .expect("failed to execute process");
             }
             None => println!("{x}: command not found"),
         },
