@@ -1,7 +1,45 @@
 #[allow(unused_imports)]
 use std::io::{self, Write};
+// use std::os::unix::fs::PermissionsExt;
+use std::path::PathBuf;
 
 static COMMANDS: &[&str] = &["type", "echo", "exit"];
+
+fn find_executable_in_dir(executable: &str, dir: PathBuf) -> Option<PathBuf> {
+    for dir_item in std::fs::read_dir(dir).unwrap() {
+        let dir_item = dir_item.unwrap();
+        if dir_item.path().is_dir() {
+            let executable_path = find_executable_in_dir(executable, dir_item.path());
+            if executable_path.is_some() {
+                return executable_path;
+            }
+        }
+        // let metadata = dir_item.path().metadata().unwrap();
+        // let permissions = metadata.permissions();
+        // let is_executable = metadata.is_file() && permissions.mode() & 0o111 != 0;
+        if dir_item.file_name() == executable {
+            return Some(dir_item.path());
+        }
+    }
+    None
+}
+fn find_executable_in_path(executable: &str) -> Option<PathBuf> {
+    let path = std::env::var("PATH").unwrap();
+    let paths = path
+        .split(':')
+        .map(std::path::Path::new)
+        .collect::<Vec<_>>();
+
+    for path in paths {
+        if path.is_dir() {
+            let executable_path = find_executable_in_dir(executable, PathBuf::from(path));
+            if executable_path.is_some() {
+                return executable_path;
+            }
+        }
+    }
+    None
+}
 
 fn parse_commands(input: String) {
     let input = input.trim();
@@ -19,7 +57,10 @@ fn parse_commands(input: String) {
                 if COMMANDS.contains(&command) {
                     println!("{command} is a shell builtin");
                 } else {
-                    println!("{command}: not found");
+                    match find_executable_in_path(command) {
+                        Some(path) => println!("{command} is {}", path.display()),
+                        None => println!("{command}: not found"),
+                    }
                 }
             }
         }
