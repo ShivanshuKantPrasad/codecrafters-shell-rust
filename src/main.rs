@@ -56,13 +56,11 @@ fn parse_commands(input: String) {
             println!("{}", std::env::current_dir().unwrap().display());
         }
         Some("cd") => {
-            let path = split.next().unwrap();
-            if path.starts_with('/') {
-                if std::fs::metadata(path).is_ok() {
-                    let _ = std::env::set_current_dir(path);
-                } else {
-                    println!("cd: {path}: No such file or directory");
-                }
+            let path = std::path::Path::new(split.next().unwrap());
+            if std::fs::metadata(path).is_ok() {
+                let _ = std::env::set_current_dir(path);
+            } else {
+                println!("cd: {}: No such file or directory", path.display());
             }
         }
         Some("type") => {
