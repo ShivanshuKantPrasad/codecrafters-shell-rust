@@ -2,21 +2,21 @@
 use std::io::{self, Write};
 
 fn parse_commands(input: String) {
-    if input.is_empty() {
-        return;
-    }
     let input = input.trim();
-    if input.starts_with("exit") {
-        match input.split_once(' ') {
-            Some((_, code)) => {
-                let code = code.parse::<i32>().unwrap();
-                std::process::exit(code);
-            }
-            None => println!("Invalide command {input}"),
+    let mut split = input.split(' ');
+    match split.next() {
+        Some("exit") => {
+            let code = split.next().unwrap().parse::<i32>().unwrap();
+            std::process::exit(code);
         }
-        std::process::exit(0);
+        Some("echo") => {
+            println!("{}", split.collect::<Vec<_>>().join(" "));
+        }
+        Some(x) => {
+            println!("{x}: command not found");
+        }
+        None => {}
     }
-    println!("{input}: command not found");
 }
 
 fn main() {
