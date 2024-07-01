@@ -1,7 +1,7 @@
 #[allow(unused_imports)]
 use std::io::{self, Write};
 // use std::os::unix::fs::PermissionsExt;
-use std::path::PathBuf;
+use std::{path::PathBuf, process::Command};
 
 static COMMANDS: &[&str] = &["type", "echo", "exit"];
 
@@ -64,9 +64,17 @@ fn parse_commands(input: String) {
                 }
             }
         }
-        Some(x) => {
-            println!("{x}: command not found");
-        }
+        Some(x) => match find_executable_in_path(x) {
+            Some(path) => {
+                let result = Command::new(path.as_os_str())
+                    .args(split)
+                    .output()
+                    .expect("failed to execute process")
+                    .stdout;
+                println!("{}", String::from_utf8(result).unwrap().trim());
+            }
+            None => println!("{x}: command not found"),
+        },
         None => {}
     }
 }
